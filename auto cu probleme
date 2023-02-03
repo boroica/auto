@@ -1,0 +1,337 @@
+package org.firstinspires.ftc.teamcode.autonomous;
+
+
+import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.acmerobotics.roadrunner.geometry.Vector2d;
+import com.acmerobotics.roadrunner.trajectory.Trajectory;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.teamcode.TeleOp;
+import org.firstinspires.ftc.teamcode.detection.SleeveDetection;
+import org.firstinspires.ftc.teamcode.odometry.util.drive.SampleMecanumDrive;
+import org.openftc.easyopencv.OpenCvCamera;
+import org.openftc.easyopencv.OpenCvCameraFactory;
+
+
+// Name of the Webcam to be set in the config
+
+@Autonomous(name = "LeftAutonomous")
+public class LeftAutonomous extends LinearOpMode {
+
+    private SleeveDetection sleeveDetection;
+    SampleMecanumDrive drive;
+
+    ElapsedTime timer = new ElapsedTime();
+
+    private double lastError = 0;
+    private double integralSum = 0;
+
+    public static double Kp = 0.01;
+    public static double Ki = 0.0;
+    public static double Kd = 0.0;
+    TeleOp teleop = new TeleOp();
+    Pose2d startPose = new Pose2d(-35.5, -64.5, Math.toRadians(90));
+
+    double targetPosition=0;
+    private OpenCvCamera camera;
+    private String webcamName = "Webcam 1";
+    @Override
+    public void runOpMode() throws InterruptedException {
+
+        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        camera = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, webcamName), cameraMonitorViewId);
+        sleeveDetection = new SleeveDetection();
+        camera.setPipeline(sleeveDetection);
+
+        teleop.vertical.initLift(hardwareMap);
+        teleop.intake.initIntake(hardwareMap);
+
+        telemetry.addLine(sleeveDetection.getPosition().toString());
+        telemetry.update();
+
+        drive = new SampleMecanumDrive(hardwareMap);
+        drive.setPoseEstimate(startPose);
+
+        Trajectory traj1 = drive.trajectoryBuilder(startPose) //pozitionare pt asezare preload
+                .lineToSplineHeading(new Pose2d(-35.5, -11.5, Math.toRadians(40.2)))
+                .addTemporalMarker(0.1, () -> {
+                    targetPosition=1350;
+                })
+                .addSpatialMarker(new Vector2d(-35.5 , -11) ,()-> {
+                    teleop.vertical.outTakeClaw.setPosition(0.5);
+                })
+                .build();
+
+
+        Trajectory traj2 = drive.trajectoryBuilder(traj1.end(), false)
+                .lineToSplineHeading(new Pose2d(-43, -14, Math.toRadians(0)))
+                .addTemporalMarker(0.7, () -> {
+                    targetPosition = 0;
+                    teleop.vertical.outTakeLeft.setPosition(1.02 - teleop.vertical.outTakeDown);
+                    teleop.vertical.outTakeRight.setPosition(teleop.vertical.outTakeDown);
+                    teleop.intake.intakeLeft.setPosition(0.1);
+                    teleop.intake.intakeRight.setPosition(0.9);
+                    teleop.intake.ArmLeft.setPosition(0.25);
+                    teleop.intake.ArmRight.setPosition(0.75);
+                    teleop.intake.UpAndDown.setPosition(0.6);
+                    teleop.intake.intakeClaw.setPosition(teleop.intake.opened);
+                })
+                .build();
+
+        Trajectory traj3 = drive.trajectoryBuilder(traj2.end(), false)
+                .lineToSplineHeading(new Pose2d(-12.2, -16, Math.toRadians(317)))
+                .addTemporalMarker(0.6, () -> {
+                    teleop.intake.intakeClaw.setPosition(teleop.intake.opened);
+                })
+                .addTemporalMarker(1, () -> {
+                    teleop.vertical.outTakeClaw.setPosition(0.8);
+                })
+                .addTemporalMarker(1.5, () -> {
+                    targetPosition=1350;
+                })
+                .build();
+
+        Trajectory traj4 = drive.trajectoryBuilder(traj3.end())
+                .lineToSplineHeading(new Pose2d(-42.75, -14, Math.toRadians(0)))
+                .addTemporalMarker(0.7, () -> {
+                   targetPosition=0;
+                    teleop.vertical.outTakeLeft.setPosition(1.02 - teleop.vertical.outTakeDown);
+                    teleop.vertical.outTakeRight.setPosition(teleop.vertical.outTakeDown);
+                    teleop.intake.intakeLeft.setPosition(0.1);
+                    teleop.intake.intakeRight.setPosition(0.9);
+                    teleop.intake.ArmLeft.setPosition(0.25);
+                    teleop.intake.ArmRight.setPosition(0.75);
+                    teleop.intake.UpAndDown.setPosition(0.61);
+                    teleop.intake.intakeClaw.setPosition(teleop.intake.opened);
+                })
+                .build();
+        Trajectory traj5 = drive.trajectoryBuilder(traj4.end(), false)
+                .lineToSplineHeading(new Pose2d(-12.2, -16, Math.toRadians(317)))
+                .addTemporalMarker(0.6, () -> {
+                    teleop.intake.intakeClaw.setPosition(teleop.intake.opened);
+                })
+                .addTemporalMarker(1, () -> {
+                    teleop.vertical.outTakeClaw.setPosition(0.8);
+                })
+                .addTemporalMarker(1.5, () -> {
+                    targetPosition=1350;
+                })
+                .build();
+        Trajectory traj6 = drive.trajectoryBuilder(traj5.end())
+                .lineToSplineHeading(new Pose2d(-41, -14, Math.toRadians(0)))
+                .addTemporalMarker(0.7, () -> {
+                   targetPosition=0;
+                    teleop.vertical.outTakeLeft.setPosition(1.02 - teleop.vertical.outTakeDown);
+                    teleop.vertical.outTakeRight.setPosition(teleop.vertical.outTakeDown);
+                    teleop.intake.intakeLeft.setPosition(0.088);
+                    teleop.intake.intakeRight.setPosition(0.9);
+                    teleop.intake.ArmLeft.setPosition(0.15);
+                    teleop.intake.ArmRight.setPosition(0.85);
+                    teleop.intake.UpAndDown.setPosition(0.54);
+                    teleop.intake.intakeClaw.setPosition(teleop.intake.opened);
+                })
+                .build();
+        Trajectory traj7 = drive.trajectoryBuilder(traj6.end(), false)
+                .lineToSplineHeading(new Pose2d(-12.2, -16.2, Math.toRadians(317)))
+                .addTemporalMarker(0.6, () -> {
+                    teleop.intake.intakeClaw.setPosition(teleop.intake.opened);
+                })
+                .addTemporalMarker(1, () -> {
+                    teleop.vertical.outTakeClaw.setPosition(0.8);
+                })
+                .addTemporalMarker(1.5, () -> {
+                    targetPosition=1350;
+                })
+                .build();
+        Trajectory traj8 = drive.trajectoryBuilder(traj7.end())
+                .lineToSplineHeading(new Pose2d(-40.2, -14, Math.toRadians(0)))
+                .addTemporalMarker(0.7, () -> {
+                    targetPosition=0;
+                    teleop.vertical.outTakeLeft.setPosition(1.02 - teleop.vertical.outTakeDown);
+                    teleop.vertical.outTakeRight.setPosition(teleop.vertical.outTakeDown);
+                    teleop.intake.intakeLeft.setPosition(0.088);
+                    teleop.intake.intakeRight.setPosition(0.9);
+                    teleop.intake.ArmLeft.setPosition(0.1);
+                    teleop.intake.ArmRight.setPosition(0.9);
+                    teleop.intake.UpAndDown.setPosition(0.5);
+                    teleop.intake.intakeClaw.setPosition(teleop.intake.opened);
+                })
+                .build();
+        Trajectory traj9 = drive.trajectoryBuilder(traj8.end(), false)
+                .lineToSplineHeading(new Pose2d(-12., -16.2, Math.toRadians(317)))
+                .addTemporalMarker(0.6, () -> {
+                    teleop.intake.intakeClaw.setPosition(teleop.intake.opened);
+                })
+                .addTemporalMarker(1, () -> {
+                    teleop.vertical.outTakeClaw.setPosition(0.8);
+                })
+                .addTemporalMarker(1.5, () -> {
+                    targetPosition=1350;
+                })
+                .build();
+        Trajectory traj10 = drive.trajectoryBuilder(traj9.end())
+                .lineToSplineHeading(new Pose2d(-40.1, -14, Math.toRadians(0)))
+                .addTemporalMarker(0.7, () -> {
+                    targetPosition=0;
+                    teleop.vertical.outTakeLeft.setPosition(1.02 - teleop.vertical.outTakeDown);
+                    teleop.vertical.outTakeRight.setPosition(teleop.vertical.outTakeDown);
+                    teleop.intake.intakeLeft.setPosition(0.088);
+                    teleop.intake.intakeRight.setPosition(0.9);
+                    teleop.intake.ArmLeft.setPosition(0.1);
+                    teleop.intake.ArmRight.setPosition(0.9);
+                    teleop.intake.UpAndDown.setPosition(0.51);
+                    teleop.intake.intakeClaw.setPosition(teleop.intake.opened);
+                })
+                .build();
+        Trajectory traj11 = drive.trajectoryBuilder(traj10.end(), false)
+                .lineToSplineHeading(new Pose2d(-12.2, -16.2, Math.toRadians(317)))
+                .addTemporalMarker(0.6, () -> {
+                    teleop.intake.intakeClaw.setPosition(teleop.intake.opened);
+                })
+                .addTemporalMarker(1, () -> {
+                    teleop.vertical.outTakeClaw.setPosition(0.8);
+                })
+                .addTemporalMarker(1.5, () -> {
+                   targetPosition=1350;
+                })
+                .build();
+
+        Trajectory parcare = drive.trajectoryBuilder(traj11.end(), false)
+                .lineToSplineHeading(new Pose2d(-56, -16.2, Math.toRadians(90)))
+                .addTemporalMarker(0.6, () -> {
+                   targetPosition=0;
+                    teleop.intake.intakeLeft.setPosition(0.988 - teleop.intake.retracted);
+                    teleop.intake.intakeRight.setPosition(teleop.intake.retracted);
+                    teleop.intake.ArmLeft.setPosition(teleop.intake.ArmUpL);
+                    teleop.intake.ArmRight.setPosition(teleop.intake.ArmUpR);
+                    teleop.intake.UpAndDown.setPosition(0.355);
+                })
+                .addTemporalMarker(1, () -> {
+                    teleop.vertical.outTakeClaw.setPosition(0.8);
+                })
+                .addTemporalMarker(1.5, () -> {
+
+                })
+                .build();
+
+        waitForStart();
+
+        drive.followTrajectory(traj1);
+        drive.followTrajectory(traj2);
+        sleep(100);
+        teleop.intake.intakeClaw.setPosition(teleop.intake.closed);
+        teleop.vertical.outTakeClaw.setPosition(0.53);
+        sleep(100);
+        teleop.intake.intakeLeft.setPosition(0.988-teleop.intake.retracted);
+        teleop.intake.intakeRight.setPosition(teleop.intake.retracted);
+        teleop.intake.ArmLeft.setPosition(teleop.intake.ArmUpL);
+        teleop.intake.ArmRight.setPosition(teleop.intake.ArmUpR);
+        teleop.intake.UpAndDown.setPosition(0.355);
+        sleep(100);
+        drive.followTrajectory(traj3);
+        sleep(300);
+        teleop.vertical.outTakeClaw.setPosition(0.5);
+        sleep(200);
+        drive.followTrajectory(traj4);
+        teleop.intake.intakeClaw.setPosition(teleop.intake.closed);
+        teleop.vertical.outTakeClaw.setPosition(0.53);
+        sleep(100);
+        teleop.intake.intakeLeft.setPosition(0.988-teleop.intake.retracted);
+        teleop.intake.intakeRight.setPosition(teleop.intake.retracted);
+        teleop.intake.ArmLeft.setPosition(teleop.intake.ArmUpL);
+        teleop.intake.ArmRight.setPosition(teleop.intake.ArmUpR);
+        teleop.intake.UpAndDown.setPosition(0.355);
+        sleep(100);
+        drive.followTrajectory(traj5);
+        sleep(350);
+        teleop.vertical.outTakeClaw.setPosition(0.5);
+        drive.followTrajectory(traj6);
+        teleop.intake.intakeClaw.setPosition(teleop.intake.closed);
+        teleop.vertical.outTakeClaw.setPosition(0.53);
+        sleep(100);
+        teleop.intake.intakeLeft.setPosition(0.988-teleop.intake.retracted);
+        teleop.intake.intakeRight.setPosition(teleop.intake.retracted);
+        teleop.intake.ArmLeft.setPosition(teleop.intake.ArmUpL);
+        teleop.intake.ArmRight.setPosition(teleop.intake.ArmUpR);
+        teleop.intake.UpAndDown.setPosition(0.355);
+        sleep(100);
+        drive.followTrajectory(traj7);
+        sleep(300);
+        teleop.vertical.outTakeClaw.setPosition(0.5);
+        sleep(100);
+        teleop.intake.intakeClaw.setPosition(teleop.intake.closed);
+        teleop.vertical.outTakeClaw.setPosition(0.53);
+        sleep(100);
+        teleop.intake.intakeLeft.setPosition(0.988-teleop.intake.retracted);
+        teleop.intake.intakeRight.setPosition(teleop.intake.retracted);
+        teleop.intake.ArmLeft.setPosition(teleop.intake.ArmUpL);
+        teleop.intake.ArmRight.setPosition(teleop.intake.ArmUpR);
+        teleop.intake.UpAndDown.setPosition(0.355);
+        sleep(300);
+        teleop.vertical.outTakeClaw.setPosition(0.5);
+        sleep(100);
+        drive.followTrajectory(traj8);
+        sleep(100);
+        teleop.intake.intakeClaw.setPosition(teleop.intake.closed);
+        teleop.vertical.outTakeClaw.setPosition(0.53);
+        sleep(100);
+        teleop.intake.intakeLeft.setPosition(0.988-teleop.intake.retracted);
+        teleop.intake.intakeRight.setPosition(teleop.intake.retracted);
+        teleop.intake.ArmLeft.setPosition(teleop.intake.ArmUpL);
+        teleop.intake.ArmRight.setPosition(teleop.intake.ArmUpR);
+        teleop.intake.UpAndDown.setPosition(0.355);
+        sleep(100);
+        drive.followTrajectory(traj9);
+        sleep(300);
+        teleop.vertical.outTakeClaw.setPosition(0.5);
+        sleep(100);
+        drive.followTrajectory(traj10);teleop.intake.intakeClaw.setPosition(teleop.intake.closed);
+        teleop.vertical.outTakeClaw.setPosition(0.53);
+        sleep(100);
+        teleop.intake.intakeLeft.setPosition(0.988-teleop.intake.retracted);
+        teleop.intake.intakeRight.setPosition(teleop.intake.retracted);
+        teleop.intake.ArmLeft.setPosition(teleop.intake.ArmUpL);
+        teleop.intake.ArmRight.setPosition(teleop.intake.ArmUpR);
+        teleop.intake.UpAndDown.setPosition(0.355);
+        sleep(100);
+        drive.followTrajectory(traj11);
+        sleep(300);
+        teleop.vertical.outTakeClaw.setPosition(0.5);
+        sleep(200);
+        drive.followTrajectory(parcare);
+
+
+        while(!isStopRequested() && !opModeIsActive()){
+            telemetry.addData("Case", sleeveDetection.getPosition());
+            telemetry.update();
+        }
+
+        while(drive.isBusy()){
+            double powerRight = update(targetPosition, teleop.vertical.liftRight.getCurrentPosition());
+            double powerLeft = update(targetPosition, teleop.vertical.liftLeft.getCurrentPosition());
+            teleop.vertical.liftRight.setPower(powerRight);
+            teleop.vertical.liftLeft.setPower(powerLeft);
+            drive.update();
+            telemetry.addData("case ", sleeveDetection.getPosition());
+            telemetry.update();
+            }
+    }
+
+    public double update(double reference, double state){
+        double error = reference - state;
+        integralSum += error * timer.seconds();
+        double derivative = (error- lastError) / timer.seconds();
+        lastError = error;
+
+        timer.reset();
+
+        double output = (error * Kp) + (derivative * Kd) + (integralSum * Ki);
+        return  output;
+    }
+
+
+}
